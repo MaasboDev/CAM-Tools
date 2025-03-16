@@ -1,0 +1,13 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="512" height="512" fill="black"/>
+<rect x="81" y="186" width="350" height="200" rx="21" fill="white"/>
+<path d="M243.459 127.517C248.05 125.131 250.345 123.938 252.761 123.469C254.9 123.054 257.1 123.054 259.239 123.469C261.655 123.938 263.95 125.131 268.541 127.517L287.107 137.164C316.051 152.203 330.523 159.723 332.594 166.592C334.378 172.51 332.81 178.931 328.497 183.36C323.492 188.5 307.183 188.5 274.566 188.5H237.434C204.817 188.5 188.508 188.5 183.503 183.36C179.19 178.931 177.622 172.51 179.406 166.592C181.477 159.723 195.949 152.203 224.893 137.164L243.459 127.517Z" fill="white"/>
+<circle cx="256" cy="286" r="75" fill="black"/>
+<rect x="119" y="421" width="200" height="40" fill="white"/>
+<circle cx="354" cy="441" r="40" fill="white"/>
+<rect x="333" y="441.213" width="30" height="30" transform="rotate(-45 333 441.213)" fill="black"/>
+<rect x="354" y="420" width="40" height="42" fill="black"/>
+<rect width="219" height="45" rx="20" transform="matrix(-1 0 0 1 419 63)" fill="white"/>
+<rect width="64" height="20" transform="matrix(-1 0 0 1 201 76)" fill="white"/>
+<path d="M114 71L90.6173 78.5V93.5L114 101L137.383 93.5V78.5L114 71Z" fill="white"/>
+</svg>
