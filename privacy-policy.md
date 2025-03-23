@@ -1,7 +1,3 @@
-Here's a privacy policy tailored for your Android app with camera tools:
-
----
-
 # Privacy Policy
 
 **Last Updated:** March 23, 2025
