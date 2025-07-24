@@ -13,9 +13,11 @@ class MainViewModel : ViewModel() {
 	fun onTakePhoto(bitmap: Bitmap) {
 		_bitmaps.value += bitmap
 	}
+
 	fun dismissDialog() {
 		visiblePermissionDialogQueue.removeAt(visiblePermissionDialogQueue.lastIndex)
 	}
+
 	fun onPermissionResult(
 		permission: String,
 		isGranted: Boolean,

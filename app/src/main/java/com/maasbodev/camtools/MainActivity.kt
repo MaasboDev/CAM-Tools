@@ -23,10 +23,13 @@ import androidx.camera.view.LifecycleCameraController
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cameraswitch
 import androidx.compose.material.icons.filled.Photo
@@ -45,6 +48,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.maasbodev.camtools.ui.theme.CAMToolsTheme
 import kotlinx.coroutines.launch
@@ -59,6 +66,14 @@ class MainActivity : ComponentActivity() {
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		enableEdgeToEdge()
+
+		WindowCompat.setDecorFitsSystemWindows(window, false)
+		WindowInsetsControllerCompat(window, window.decorView).let { controller ->
+			controller.hide(WindowInsetsCompat.Type.systemBars())
+			controller.systemBarsBehavior =
+				WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+		}
+
 		setContent {
 			CAMToolsTheme {
 				val viewModel = viewModel<MainViewModel>()
@@ -102,12 +117,14 @@ class MainActivity : ComponentActivity() {
 				if (hasRequiredPermissions()) {
 					val scope = rememberCoroutineScope()
 					val scaffoldState = rememberBottomSheetScaffoldState()
+					val lifecycleOwner = LocalLifecycleOwner.current
 					val controller = remember {
 						LifecycleCameraController(applicationContext).apply {
 							setEnabledUseCases(
 								CameraController.IMAGE_CAPTURE or
 										CameraController.VIDEO_CAPTURE
 							)
+							bindToLifecycle(lifecycleOwner)
 						}
 					}
 					val bitmaps by viewModel.bitmaps.collectAsState()
@@ -126,6 +143,7 @@ class MainActivity : ComponentActivity() {
 							modifier = Modifier
 								.fillMaxSize()
 								.padding(innerPadding)
+								.padding(WindowInsets.safeDrawing.asPaddingValues())
 						) {
 							CameraPreview(
 								controller = controller,
