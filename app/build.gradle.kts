@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
 	alias(libs.plugins.android.application)
 	alias(libs.plugins.kotlin.android)
@@ -12,8 +14,8 @@ android {
 		applicationId = "com.maasbodev.camtools"
 		minSdk = 24
 		targetSdk = 35
-		versionCode = 3
-		versionName = "0.1.0.1"
+		versionCode = 4
+		versionName = "0.1.1"
 
 		testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 	}
@@ -31,8 +33,10 @@ android {
 		sourceCompatibility = JavaVersion.VERSION_11
 		targetCompatibility = JavaVersion.VERSION_11
 	}
-	kotlinOptions {
-		jvmTarget = "11"
+	kotlin {
+		compilerOptions {
+			jvmTarget = JvmTarget.JVM_11
+		}
 	}
 	buildFeatures {
 		compose = true
