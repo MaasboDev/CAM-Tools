@@ -1,3 +1,17 @@
 <resources>
-    <string name="app_name">CAM Tools</string>
+    <string name="app_name">CAMTools</string>
+    <string name="switch_camera">Switch camera</string>
+    <string name="open_gallery">Open gallery</string>
+    <string name="take_photo">Take photo</string>
+    <string name="record_video">Record video</string>
+    <string name="permission_dialog_title">Permission required</string>
+    <string name="permission_dialog_grant_button">Grant permission</string>
+    <string name="all_or_nothing_dialog_text">This app cannot work without camera and audio permissions. Please grant all required permissions or the app will close.</string>
+    <string name="all_or_nothing_dialog_grant_button">Grant Permissions</string>
+    <string name="all_or_nothing_dialog_settings_button">Open Settings</string>
+    <string name="all_or_nothing_dialog_close_button">Close App</string>
+    <string name="camera_permission_description">This app needs access to your camera so that you can take photos.</string>
+    <string name="camera_permission_permanently_declined">It seems you permanently declined camera permission. You can go to the app settings to grant it.</string>
+    <string name="audio_permission_description">This app needs access to your microphone so that you can record videos.</string>
+    <string name="audio_permission_permanently_declined">It seems you permanently declined microphone permission. You can go to the app settings to grant it.</string>
 </resources>

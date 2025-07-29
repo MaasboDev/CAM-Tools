@@ -12,8 +12,8 @@ android {
 		applicationId = "com.maasbodev.camtools"
 		minSdk = 24
 		targetSdk = 35
-		versionCode = 2
-		versionName = "0.1.0.0"
+		versionCode = 3
+		versionName = "0.1.0.1"
 
 		testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 	}
@@ -58,6 +58,19 @@ dependencies {
 	implementation(libs.androidx.camera.video)
 	implementation(libs.androidx.camera.view)
 	implementation(libs.androidx.camera.extensions)
+
+	implementation(libs.coil)
+	implementation(libs.mlkit.document.scanner)
+	implementation(libs.mlkit.text.recognition)
+
+	androidTestImplementation(libs.androidx.test.runner)
+	androidTestImplementation(libs.androidx.test.rules)
+
+	// Espresso
+	androidTestImplementation(libs.androidx.espresso.core)
+
+	// UI Automator
+	androidTestImplementation(libs.androidx.ui.automator)
 
 	testImplementation(libs.junit)
 	androidTestImplementation(libs.androidx.junit)

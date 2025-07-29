@@ -266,7 +266,7 @@ fun CAMToolsTheme(
 		}
 
 		darkTheme -> darkScheme
-		else -> darkScheme
+		else -> lightScheme
 	}
 
 	MaterialTheme(

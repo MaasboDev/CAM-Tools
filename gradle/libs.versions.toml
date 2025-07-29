@@ -1,15 +1,22 @@
 [versions]
-agp = "8.9.0"
-cameraxVersion = "1.4.1"
-kotlin = "2.1.10"
-coreKtx = "1.15.0"
+agp = "8.10.0"
+cameraxVersion = "1.4.2"
+kotlin = "2.2.0"
+coreKtx = "1.16.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
-lifecycleRuntimeKtx = "2.8.7"
+lifecycleRuntimeKtx = "2.9.2"
 activityCompose = "1.10.1"
-composeBom = "2025.03.00"
+composeBom = "2025.07.00"
 materialIconsExtended = "1.7.8"
+coil = "2.7.0"
+mlkit = "16.0.1"
+mlkitDocumentScanner = "16.0.0-beta1"
+# --- Add these new versions for testing ---
+testRunner = "1.6.1"
+testRules = "1.6.1"
+uiAutomator = "2.3.0"
 
 [libraries]
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
@@ -30,14 +37,23 @@ androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 
+coil = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+mlkit-document-scanner = { group = "com.google.android.gms", name = "play-services-mlkit-document-scanner", version.ref = "mlkitDocumentScanner" }
+mlkit-text-recognition = { group = "com.google.mlkit", name = "text-recognition", version.ref = "mlkit" }
+
+# --- Testing Libraries ---
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
+# --- Add these new library definitions ---
+androidx-test-runner = { group = "androidx.test", name = "runner", version.ref = "testRunner" }
+androidx-test-rules = { group = "androidx.test", name = "rules", version.ref = "testRules" }
+androidx-ui-automator = { group = "androidx.test.uiautomator", name = "uiautomator", version.ref = "uiAutomator" }
+
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
-
