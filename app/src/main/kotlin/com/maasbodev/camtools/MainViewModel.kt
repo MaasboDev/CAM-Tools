@@ -28,16 +28,44 @@ class MainViewModel : ViewModel() {
 	private val _galleryImages = MutableStateFlow<List<GalleryImage>>(emptyList())
 	val galleryImages = _galleryImages.asStateFlow()
 
+	private val _openGallerySheet = MutableStateFlow(false)
+	val openGallerySheet = _openGallerySheet.asStateFlow()
+
 	val isRecording = mutableStateOf(false)
 	val videoUri = mutableStateOf<Uri?>(null)
 
-	// This is the only state we need for the dialog now.
 	val showPermissionRejectionDialog = mutableStateOf(false)
-
 	val selectedTabIndex = mutableIntStateOf(0)
+
+	val isMediaAccessDenied = mutableStateOf(false)
+	val isMediaAccessLimited = mutableStateOf(false)
 
 	fun onTakePhoto(bitmap: Bitmap) {
 		_bitmaps.value += bitmap
+	}
+
+	fun onRecordingStarted() {
+		isRecording.value = true
+	}
+
+	fun onRecordingFinished() {
+		isRecording.value = false
+	}
+
+	fun requestOpenGallerySheet() {
+		_openGallerySheet.value = true
+	}
+
+	fun onGallerySheetOpened() {
+		_openGallerySheet.value = false
+	}
+
+	fun setMediaAccessDenied(denied: Boolean) {
+		isMediaAccessDenied.value = denied
+	}
+
+	fun setMediaAccessLimited(limited: Boolean) {
+		isMediaAccessLimited.value = limited
 	}
 
 	fun savePhotoToGallery(context: Context, bitmap: Bitmap): Uri? {
@@ -69,7 +97,6 @@ class MainViewModel : ViewModel() {
 					resolver.update(imageUri, contentValues, null, null)
 				}
 
-				// Refresh gallery images after saving a new photo
 				loadGalleryImages(context)
 			}
 		} catch (e: Exception) {
@@ -84,41 +111,48 @@ class MainViewModel : ViewModel() {
 			val images = withContext(Dispatchers.IO) {
 				val imageList = mutableListOf<GalleryImage>()
 
-				val projection = arrayOf(
-					MediaStore.Images.Media._ID,
-					MediaStore.Images.Media.DISPLAY_NAME,
-					MediaStore.Images.Media.DATE_TAKEN
-				)
+				try {
+					val projection = arrayOf(
+						MediaStore.Images.Media._ID,
+						MediaStore.Images.Media.DISPLAY_NAME,
+						MediaStore.Images.Media.DATE_TAKEN
+					)
 
-				val sortOrder = "${MediaStore.Images.Media.DATE_TAKEN} DESC"
+					val sortOrder = "${MediaStore.Images.Media.DATE_TAKEN} DESC"
 
-				val query = context.contentResolver.query(
-					MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-					projection,
-					null,
-					null,
-					sortOrder
-				)
+					val query = context.contentResolver.query(
+						MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+						projection,
+						null,
+						null,
+						sortOrder
+					)
 
-				query?.use { cursor ->
-					val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
-					val nameColumn =
-						cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
-					val dateTakenColumn =
-						cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_TAKEN)
+					query?.use { cursor ->
+						val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+						val nameColumn =
+							cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
+						val dateTakenColumn =
+							cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_TAKEN)
 
-					while (cursor.moveToNext()) {
-						val id = cursor.getLong(idColumn)
-						val name = cursor.getString(nameColumn)
-						val dateTaken = cursor.getLong(dateTakenColumn)
+						while (cursor.moveToNext()) {
+							val id = cursor.getLong(idColumn)
+							val name = cursor.getString(nameColumn)
+							val dateTaken = cursor.getLong(dateTakenColumn)
 
-						val contentUri = ContentUris.withAppendedId(
-							MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-							id
-						)
+							val contentUri = ContentUris.withAppendedId(
+								MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+								id
+							)
 
-						imageList.add(GalleryImage(contentUri, name, dateTaken))
+							imageList.add(GalleryImage(contentUri, name, dateTaken))
+						}
 					}
+
+					setMediaAccessDenied(false)
+				} catch (securityException: SecurityException) {
+					setMediaAccessDenied(true)
+					imageList.clear()
 				}
 
 				imageList

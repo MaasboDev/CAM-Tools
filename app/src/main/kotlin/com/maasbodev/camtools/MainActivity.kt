@@ -2,6 +2,7 @@ package com.maasbodev.camtools
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -15,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -27,10 +29,6 @@ import com.maasbodev.camtools.ui.theme.CAMToolsTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
-	private val permissionsToRequest = arrayOf(
-		Manifest.permission.CAMERA,
-		Manifest.permission.RECORD_AUDIO,
-	)
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
@@ -47,69 +45,134 @@ class MainActivity : ComponentActivity() {
 			CAMToolsTheme {
 				val viewModel = viewModel<MainViewModel>()
 
-				var hasPermissions by remember {
-					mutableStateOf(hasRequiredPermissions())
+				var hasCameraPermission by remember {
+					mutableStateOf(hasPermission(Manifest.permission.CAMERA))
+				}
+				var hasAudioPermission by remember {
+					mutableStateOf(hasPermission(Manifest.permission.RECORD_AUDIO))
+				}
+				var mediaAccess by remember {
+					mutableStateOf(currentMediaAccess())
 				}
 
 				val lifecycleOwner = LocalLifecycleOwner.current
 				DisposableEffect(lifecycleOwner) {
 					val observer = LifecycleEventObserver { _, event ->
 						if (event == Lifecycle.Event.ON_RESUME) {
-							val permissionsGranted = hasRequiredPermissions()
-							hasPermissions = permissionsGranted
-							// Update the dialog visibility based on the permission status
-							viewModel.showPermissionRejectionDialog.value = !permissionsGranted
+							hasCameraPermission = hasPermission(Manifest.permission.CAMERA)
+							hasAudioPermission = hasPermission(Manifest.permission.RECORD_AUDIO)
+							mediaAccess = currentMediaAccess()
+
+							viewModel.setMediaAccessDenied(!mediaAccess.hasAccess)
+							viewModel.setMediaAccessLimited(mediaAccess.isLimited)
+							viewModel.showPermissionRejectionDialog.value =
+								!hasCameraPermission && isCameraPermanentlyDenied()
 						}
 					}
 					lifecycleOwner.lifecycle.addObserver(observer)
-
-					onDispose {
-						lifecycleOwner.lifecycle.removeObserver(observer)
-					}
+					onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
 				}
 
-				val cameraPermissionResultLauncher = rememberLauncherForActivityResult(
+				val cameraPermissionLauncher = rememberLauncherForActivityResult(
+					contract = ActivityResultContracts.RequestPermission(),
+					onResult = { granted ->
+						hasCameraPermission = granted
+						viewModel.showPermissionRejectionDialog.value =
+							!granted && isCameraPermanentlyDenied()
+					}
+				)
+
+				val audioPermissionLauncher = rememberLauncherForActivityResult(
+					contract = ActivityResultContracts.RequestPermission(),
+					onResult = { granted ->
+						hasAudioPermission = granted
+					}
+				)
+
+				val mediaPermissionLauncher = rememberLauncherForActivityResult(
 					contract = ActivityResultContracts.RequestMultiplePermissions(),
-					onResult = { permissions ->
-						val allGranted = permissions.all { it.value }
-						hasPermissions = allGranted
-						// Directly control the single dialog's visibility
-						viewModel.showPermissionRejectionDialog.value = !allGranted
+					onResult = { results ->
+						mediaAccess = PermissionPolicy.resolveMediaAccessFromGrantResults(
+							sdkInt = Build.VERSION.SDK_INT,
+							grantResults = results
+						)
+
+						viewModel.setMediaAccessDenied(!mediaAccess.hasAccess)
+						viewModel.setMediaAccessLimited(mediaAccess.isLimited)
+
+						if (mediaAccess.hasAccess) {
+							viewModel.requestOpenGallerySheet()
+							viewModel.loadGalleryImages(this@MainActivity)
+						}
 					}
 				)
 
 				LaunchedEffect(Unit) {
-					if (!hasPermissions) {
-						cameraPermissionResultLauncher.launch(permissionsToRequest)
+					if (!hasCameraPermission) {
+						cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
 					}
 				}
 
-				// The UI is now a simple choice: show the camera or show the permission dialog.
-				if (hasPermissions) {
-					CameraScreen(viewModel)
-				} else if (viewModel.showPermissionRejectionDialog.value) {
-					// The single, simplified dialog for handling all permission failures.
-					PermissionDialog(
-						onConfirm = {
-							// The only positive action is to send the user to settings.
-							openAppSettings()
+				if (hasCameraPermission) {
+					CameraScreen(
+						viewModel = viewModel,
+						canRecordAudio = hasAudioPermission,
+						hasMediaAccess = mediaAccess.hasAccess,
+						isMediaAccessLimited = mediaAccess.isLimited,
+						onOpenGalleryRequested = {
+							if (mediaAccess.hasAccess) {
+								viewModel.requestOpenGallerySheet()
+								viewModel.loadGalleryImages(this@MainActivity)
+							} else {
+								mediaPermissionLauncher.launch(
+									PermissionPolicy.requiredMediaPermissions(
+										sdkInt = Build.VERSION.SDK_INT
+									).toTypedArray()
+								)
+							}
 						},
-						onDismiss = {
-							// The only negative action is to close the app.
-							finish()
+						onRequestAudioPermission = {
+							if (!hasAudioPermission) {
+								audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+							}
 						}
+					)
+				} else if (viewModel.showPermissionRejectionDialog.value) {
+					PermissionDialog(
+						title = stringResource(R.string.permission_dialog_title),
+						message = stringResource(R.string.camera_permission_permanently_declined),
+						confirmText = stringResource(R.string.all_or_nothing_dialog_settings_button),
+						dismissText = stringResource(R.string.all_or_nothing_dialog_close_button),
+						onConfirm = { openAppSettings() },
+						onDismiss = { finish() }
 					)
 				}
 			}
 		}
 	}
 
-	private fun hasRequiredPermissions(): Boolean {
-		return permissionsToRequest.all {
-			ContextCompat.checkSelfPermission(
-				applicationContext,
-				it
-			) == PackageManager.PERMISSION_GRANTED
-		}
+	private fun currentMediaAccess(): PermissionPolicy.MediaAccess {
+		return PermissionPolicy.resolveMediaAccess(
+			sdkInt = Build.VERSION.SDK_INT,
+			isGranted = { permission -> hasPermission(permission) }
+		)
+	}
+
+	private fun isCameraPermanentlyDenied(): Boolean {
+		val granted = hasPermission(Manifest.permission.CAMERA)
+		val shouldShowRationale =
+			shouldShowRequestPermissionRationale(Manifest.permission.CAMERA)
+
+		return PermissionPolicy.isCameraPermanentlyDenied(
+			cameraGranted = granted,
+			shouldShowRationale = shouldShowRationale
+		)
+	}
+
+	private fun hasPermission(permission: String): Boolean {
+		return ContextCompat.checkSelfPermission(
+			applicationContext,
+			permission
+		) == PackageManager.PERMISSION_GRANTED
 	}
 }

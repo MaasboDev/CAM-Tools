@@ -40,7 +40,14 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CameraScreen(viewModel: MainViewModel) {
+fun CameraScreen(
+	viewModel: MainViewModel,
+	canRecordAudio: Boolean,
+	hasMediaAccess: Boolean,
+	isMediaAccessLimited: Boolean,
+	onOpenGalleryRequested: () -> Unit,
+	onRequestAudioPermission: () -> Unit,
+) {
 	val scope = rememberCoroutineScope()
 	val scaffoldState = rememberBottomSheetScaffoldState()
 	val lifecycleOwner = LocalLifecycleOwner.current
@@ -49,17 +56,29 @@ fun CameraScreen(viewModel: MainViewModel) {
 	val controller = remember {
 		LifecycleCameraController(context).apply {
 			setEnabledUseCases(
-				CameraController.IMAGE_CAPTURE or
-						CameraController.VIDEO_CAPTURE
+				CameraController.IMAGE_CAPTURE or CameraController.VIDEO_CAPTURE
 			)
 			bindToLifecycle(lifecycleOwner)
 		}
 	}
+
 	val bitmaps by viewModel.bitmaps.collectAsState()
 	val galleryImages by viewModel.galleryImages.collectAsState()
+	val openGallerySheet by viewModel.openGallerySheet.collectAsState()
 
-	LaunchedEffect(Unit) {
-		viewModel.loadGalleryImages(context)
+	LaunchedEffect(hasMediaAccess) {
+		if (hasMediaAccess) {
+			viewModel.loadGalleryImages(context)
+		}
+	}
+
+	LaunchedEffect(openGallerySheet) {
+		if (openGallerySheet) {
+			scope.launch {
+				scaffoldState.bottomSheetState.expand()
+				viewModel.onGallerySheetOpened()
+			}
+		}
 	}
 
 	BottomSheetScaffold(
@@ -69,8 +88,7 @@ fun CameraScreen(viewModel: MainViewModel) {
 			PhotoBottomSheetContent(
 				bitmaps = bitmaps,
 				galleryImages = galleryImages,
-				modifier = Modifier
-					.fillMaxWidth(),
+				modifier = Modifier.fillMaxWidth()
 			)
 		}
 	) { innerPadding ->
@@ -82,19 +100,19 @@ fun CameraScreen(viewModel: MainViewModel) {
 		) {
 			CameraPreview(
 				controller = controller,
-				modifier = Modifier
-					.fillMaxSize(),
+				modifier = Modifier.fillMaxSize()
 			)
+
 			IconButton(
 				onClick = {
 					controller.cameraSelector =
-						if (controller.cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA)
+						if (controller.cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA) {
 							CameraSelector.DEFAULT_FRONT_CAMERA
-						else
+						} else {
 							CameraSelector.DEFAULT_BACK_CAMERA
+						}
 				},
-				modifier = Modifier
-					.offset(16.dp, 16.dp)
+				modifier = Modifier.offset(16.dp, 16.dp)
 			) {
 				Icon(
 					imageVector = Icons.Default.Cameraswitch,
@@ -102,26 +120,30 @@ fun CameraScreen(viewModel: MainViewModel) {
 					tint = Color.White
 				)
 			}
+
 			Row(
 				modifier = Modifier
 					.fillMaxWidth()
 					.align(Alignment.BottomCenter)
 					.padding(16.dp),
-				horizontalArrangement = Arrangement.SpaceAround,
+				horizontalArrangement = Arrangement.SpaceAround
 			) {
 				IconButton(
 					onClick = {
-						scope.launch {
-							scaffoldState.bottomSheetState.expand()
+						if (hasMediaAccess) {
+							viewModel.requestOpenGallerySheet()
+						} else {
+							onOpenGalleryRequested()
 						}
 					}
 				) {
 					Icon(
 						imageVector = Icons.Default.Photo,
 						contentDescription = stringResource(R.string.open_gallery),
-						tint = Color.White
+						tint = if (isMediaAccessLimited) Color(0xFFFFD54F) else Color.White
 					)
 				}
+
 				IconButton(
 					onClick = {
 						takePhoto(
@@ -140,15 +162,24 @@ fun CameraScreen(viewModel: MainViewModel) {
 						tint = Color.White
 					)
 				}
+
 				IconButton(
 					onClick = {
-						viewModel.isRecording.value = !viewModel.isRecording.value
+						if (!canRecordAudio) {
+							onRequestAudioPermission()
+						} else {
+							if (viewModel.isRecording.value) {
+								viewModel.onRecordingFinished()
+							} else {
+								viewModel.onRecordingStarted()
+							}
+						}
 					}
 				) {
 					Icon(
 						imageVector = Icons.Default.Videocam,
 						contentDescription = stringResource(R.string.record_video),
-						tint = Color.White
+						tint = if (viewModel.isRecording.value) Color.Red else Color.White
 					)
 				}
 			}
